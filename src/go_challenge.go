@@ -1,6 +1,7 @@
 package main
 
 import (
+    "bufio"
     "database/sql"
     "fmt"
     "io/ioutil"
@@ -169,16 +170,66 @@ func readDataAVG(n int, props string) {
     }
 }
 
+func menu(main chan bool) {
+    reader := bufio.NewReader(os.Stdin)
+    fmt.Print("\n\nUbiWhere challenge Golang\n\n")
+    fmt.Print("Please choose one of the following options:\n")
+    fmt.Print("1: for get an amount all metrics\n")
+    fmt.Print("2: for specify what metrics you want\n")
+    fmt.Print("3: for an average of one of more metrics\n")
+    fmt.Print("Other integer value will quit the application.\n")
+    menu, _ := reader.ReadString('\n')
+    menu = strings.Replace(menu, "\n", "", -1)
+    var option, err = strconv.Atoi(menu)
+    if (err == nil) {
+        switch (option) {
+            case 1:
+                fmt.Print("Enter the amont of samples you want to get: ")
+                n_metrics, _ := reader.ReadString('\n')
+                n_metrics = strings.Replace(n_metrics, "\n", "", -1)
+                var samples, err = strconv.Atoi(n_metrics)
+                if (err == nil) {
+                    readData(samples, "*")
+                } else {
+                    fmt.Print("Please use just integer values \n")
+                }
+            case 2:
+                fmt.Print("Enter the amont of samples you want to get: ")
+                n_metrics, _ := reader.ReadString('\n')
+                n_metrics = strings.Replace(n_metrics, "\n", "", -1)
+                var samples, err = strconv.Atoi(n_metrics)
+                if (err == nil) {
+                    fmt.Print("Please specify the property name (sensor[1.4], cpu or ram): ")
+                    properties, _ := reader.ReadString('\n')
+                    readData(samples, properties)
+                } else {
+                    fmt.Print("Please use just integer values \n")
+                }
+            case 3:
+                fmt.Print("Will do the average \n")
+                fmt.Print("Please specify the property name (sensor[1.4], cpu or ram): ")
+                properties, _ := reader.ReadString('\n')
+                readDataAVG(0, properties)
+            default:
+                return
+        }
+    } else {
+        fmt.Print("Please use just integer values \n")
+    }
+    main <- true
+}
+
 func main() {
     timeout := make(chan bool)
-
+    main := make(chan bool)
     for {
         select {
         case <-time.After(time.Second):
             go storeData(timeout)
             <- timeout
         }
-
+        go menu(main)
+        <-main
         //end loop
     }
     //end main
