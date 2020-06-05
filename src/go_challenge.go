@@ -1,11 +1,15 @@
 package main
 
 import (
+    "database/sql"
     "fmt"
     "io/ioutil"
     "math/rand"
+    "runtime"
     "strconv"
     "strings"
+    "time"
+    _ "github.com/mattn/go-sqlite3"
 )
 
 func getSensorData() (int, int, int, int) {
@@ -67,8 +71,26 @@ func getMemUsage() (float64){
     return ramUsage
 }
 
+func storeData(timeout chan bool) {
+    database, _ := sql.Open("sqlite3", "./measures.db")
+    statement, _ := database.Prepare("CREATE TABLE IF NOT EXISTS resources (id INTEGER PRIMARY KEY, cpu FLOAT, mem FLOAT, sensor1 INTEGER, sensor2 INTEGER, sensor3 INTEGER, sensor4 INTEGER)")
+    statement.Exec()
+    statement, _ = database.Prepare("INSERT INTO resources (cpu, mem, sensor1, sensor2, sensor3, sensor4) VALUES (?, ?, ?, ?, ?, ?)")
+    s1,s2,s3,s4 := getSensorData()
+    statement.Exec(getCPUUsage(), getMemUsage(), s1,s2,s3,s4)
+    timeout <- true
+}
+
 func main() {
-    s1, s2, s3, s4 := getSensorData()
-    cpu := getCPUUsage()
-    mem := getMemUsage()
+    timeout := make(chan bool)
+
+    for {
+        select {
+        case <-time.After(time.Second):
+            go storeData(timeout)
+            <- timeout
+        }
+
+        //end loop
+    }
 }
