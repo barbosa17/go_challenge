@@ -5,6 +5,7 @@ import (
     "fmt"
     "io/ioutil"
     "math/rand"
+    "os"
     "runtime"
     "strconv"
     "strings"
@@ -81,6 +82,44 @@ func storeData(timeout chan bool) {
     timeout <- true
 }
 
+func readData(n int, props string) {
+    trimed_props := strings.ReplaceAll(props, ",", "")
+    fixed_props := strings.ReplaceAll(trimed_props, " ", ", ")
+
+    database, err := sql.Open("sqlite3", "./measures.db")
+
+    rows, err := database.Query("SELECT " + fixed_props + " FROM resources ORDER BY id DESC LIMIT " + strconv.Itoa(n))
+    if err != nil {
+        fmt.Printf("Error: %v", err)
+        return
+    }
+    columns, err := rows.Columns()
+    if err != nil {
+        fmt.Printf("Error: %v", err)
+        return
+    }
+    colNum := len(columns)
+
+    var values = make([]interface{}, colNum)
+    for i, _ := range values {
+        var ii interface{}
+        values[i] = &ii
+    }
+
+    for rows.Next() {
+        err := rows.Scan(values...)
+        if err != nil {
+            fmt.Printf("Error: %v", err)
+            return
+        }
+        for i, colName := range columns {
+            var raw_value = *(values[i].(*interface{}))
+            fmt.Println(colName,raw_value)
+
+        }
+    }
+}
+
 func main() {
     timeout := make(chan bool)
 
@@ -93,4 +132,5 @@ func main() {
 
         //end loop
     }
+    //end main
 }
