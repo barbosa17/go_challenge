@@ -58,7 +58,17 @@ func getCPUUsage()(float64){
     return cpuUsage
 }
 
+func getMemUsage() (float64){
+    var m runtime.MemStats
+    runtime.ReadMemStats(&m)
+    totalAlloc := m.TotalAlloc / 1024
+    sysRAM := m.Sys / 1024
+    var ramUsage = 100 * (float64(totalAlloc) / float64(sysRAM))
+    return ramUsage
+}
+
 func main() {
     s1, s2, s3, s4 := getSensorData()
-    cpu = getCPUUsage()
+    cpu := getCPUUsage()
+    mem := getMemUsage()
 }
