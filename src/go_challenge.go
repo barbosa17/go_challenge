@@ -120,6 +120,55 @@ func readData(n int, props string) {
     }
 }
 
+// TODO: Revisit this function
+// Implement this behaviour in the readData()
+func readDataAVG(n int, props string) {
+    trimed_props := strings.ReplaceAll(props, ",", "")
+
+    database, _ := sql.Open("sqlite3", "./measures.db")
+
+    avg_props:= ""
+    words := strings.Fields(trimed_props)
+    for i, elem := range words {
+        if (i == 0){
+            avg_props = "AVG(" + string(elem) + ") " + avg_props
+        }else {
+            avg_props = "AVG(" + string(elem) + "), " + avg_props
+        }
+    }
+    rows, err := database.Query("SELECT " + avg_props + " FROM resources")
+
+    if err != nil {
+        fmt.Printf("Error: %v", err)
+        return
+    }
+    columns, err := rows.Columns()
+    if err != nil {
+        fmt.Printf("Error: %v", err)
+        return
+    }
+    colNum := len(columns)
+
+    var values = make([]interface{}, colNum)
+    for i, _ := range values {
+        var ii interface{}
+        values[i] = &ii
+    }
+
+    for rows.Next() {
+        err := rows.Scan(values...)
+        if err != nil {
+            fmt.Printf("Error: %v", err)
+            return
+        }
+        for i, colName := range columns {
+            var raw_value = *(values[i].(*interface{}))
+            fmt.Println(colName,raw_value)
+
+        }
+    }
+}
+
 func main() {
     timeout := make(chan bool)
 
